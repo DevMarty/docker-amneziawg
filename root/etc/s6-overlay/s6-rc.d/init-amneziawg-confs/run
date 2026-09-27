@@ -606,6 +606,14 @@ DUDE"
                 PEER_ID="peer_${i}"
             fi
             mkdir -p "/config/${PEER_ID}"
+
+            # Use per-peer client AllowedIPs when set, otherwise fall back to global ALLOWEDIPS.
+            GLOBAL_ALLOWEDIPS="${ALLOWEDIPS}"
+            PEER_ALLOWEDIPS_VAR="ALLOWEDIPS_PEER_${i}"
+            if [[ -n "${!PEER_ALLOWEDIPS_VAR}" ]]; then
+                ALLOWEDIPS="${!PEER_ALLOWEDIPS_VAR}"
+            fi
+
             if [[ ! -f "/config/${PEER_ID}/privatekey-${PEER_ID}" ]]; then
                 umask 077
                 awg genkey | tee "/config/${PEER_ID}/privatekey-${PEER_ID}" | awg pubkey > "/config/${PEER_ID}/publickey-${PEER_ID}"
@@ -664,6 +672,8 @@ DUDE"
 PublicKey = $(cat "/config/${PEER_ID}/publickey-${PEER_ID}")
 DUDE
             fi
+            ALLOWEDIPS="${GLOBAL_ALLOWEDIPS}"
+
             SERVER_ALLOWEDIPS=SERVER_ALLOWEDIPS_PEER_${i}
             # add peer's allowedips to server conf
             if [[ -n "${!SERVER_ALLOWEDIPS}" ]]; then
@@ -698,6 +708,10 @@ DUDE
     done
 }
 
+get_peer_allowedips_fingerprint () {
+    env | sed -n '/^ALLOWEDIPS_PEER_/p' | sort | sha256sum | awk '{print $1}'
+}
+
 save_vars () {
     cat <<DUDE > /config/.donoteditthisfile
 ORIG_SERVERURL="$SERVERURL"
@@ -706,6 +720,7 @@ ORIG_PEERDNS="$PEERDNS"
 ORIG_PEERS="$PEERS"
 ORIG_INTERFACE="$INTERFACE"
 ORIG_ALLOWEDIPS="$ALLOWEDIPS"
+ORIG_PEER_ALLOWEDIPS_FINGERPRINT="$(get_peer_allowedips_fingerprint)"
 ORIG_PERSISTENTKEEPALIVE_PEERS="$PERSISTENTKEEPALIVE_PEERS"
 ORIG_AWG_VERSION="$AWG_VERSION"
 ORIG_AWG_JC="$AWG_JC"
@@ -791,6 +806,7 @@ if [[ -n "$PEERS" ]]; then
            [[ "$PEERS" != "$ORIG_PEERS" ]] || \
            [[ "$INTERFACE" != "$ORIG_INTERFACE" ]] || \
            [[ "$ALLOWEDIPS" != "$ORIG_ALLOWEDIPS" ]] || \
+           [[ "$(get_peer_allowedips_fingerprint)" != "$ORIG_PEER_ALLOWEDIPS_FINGERPRINT" ]] || \
            [[ "$PERSISTENTKEEPALIVE_PEERS" != "$ORIG_PERSISTENTKEEPALIVE_PEERS" ]] || \
            [[ "$AWG_VERSION" != "$ORIG_AWG_VERSION" ]] || \
            [[ "$AWG_JC" != "$ORIG_AWG_JC" ]] || \

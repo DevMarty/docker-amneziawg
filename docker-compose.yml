@@ -39,8 +39,9 @@ services:
       # - PERSISTENTKEEPALIVE_PEERS=all     # Which peers get keepalive (all or comma-separated)
       # - LOG_CONFS=true                    # Show QR codes in logs
 
-      # ---- Per-peer server AllowedIPs (site-to-site VPN) ----
-      # - SERVER_ALLOWEDIPS_PEER_laptop=192.168.1.0/24
+      # ---- Per-peer AllowedIPs (site-to-site VPN) ----
+      # - ALLOWEDIPS_PEER_laptop=10.13.13.0/24,192.168.2.0/24  # Client-side routes; overrides ALLOWEDIPS for this peer
+      # - SERVER_ALLOWEDIPS_PEER_laptop=192.168.1.0/24          # Server-side route to the LAN behind this peer
 
       # ---- AmneziaWG Protocol Version ----
       # - AWG_VERSION=2.0                   # "2.0" (default), "3.0" (header protection), "3.1" (3.0 + RandomTrailers) or "1.5" for legacy clients
